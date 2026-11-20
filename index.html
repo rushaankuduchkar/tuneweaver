@@ -1,0 +1,2498 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>TuneWeaver 2.0 — Tactile Audio Sketchbook</title>
+  <!-- Tailwind CSS for responsive layout & utility spacing -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- Geometric Sans & Technical Monospace Typography -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet" />
+
+  <style>
+    /* ==========================================================================
+       DESIGN TOKENS & THEME SYSTEM (PUTTY SHELL vs. TYPE-IV DARK DECK)
+       Inspired by Dieter Rams / Braun & Teenage Engineering tactile hardware
+       ========================================================================== */
+    :root {
+      --bg-shell: #CFCAC0;
+      --bg-shell-elevated: #C6C0B5;
+      --ink-primary: #121212;
+      --ink-secondary: #383530;
+      --ink-muted: #5C574F;
+      --stone-surface: #B4AFA6;
+      --stone-hover: #A6A096;
+      --vermilion: #C9332B;
+      --vermilion-hover: #B62A23;
+      --vermilion-active: #9E221C;
+      --obsidian: #121212;
+      --cream-led: #F2EFE9;
+      --rule-color: #121212;
+      --grain-opacity: 0.035;
+      --shadow-hardware: 0 2px 0 rgba(18, 18, 18, 0.16), 0 10px 24px rgba(18, 18, 18, 0.06);
+      --shadow-pill: 0 2px 0 rgba(18, 18, 18, 0.22);
+    }
+
+    [data-theme="dark"] {
+      --bg-shell: #171719;
+      --bg-shell-elevated: #202024;
+      --ink-primary: #F2EFE9;
+      --ink-secondary: #C5C0B7;
+      --ink-muted: #8E8980;
+      --stone-surface: #2B2B30;
+      --stone-hover: #36363C;
+      --vermilion: #D4382F;
+      --vermilion-hover: #E0433A;
+      --vermilion-active: #B52A22;
+      --obsidian: #0C0C0E;
+      --cream-led: #F2EFE9;
+      --rule-color: #3A3A40;
+      --grain-opacity: 0.045;
+      --shadow-hardware: 0 2px 0 rgba(0, 0, 0, 0.45), 0 12px 28px rgba(0, 0, 0, 0.35);
+      --shadow-pill: 0 2px 0 rgba(0, 0, 0, 0.55);
+    }
+
+    * {
+      box-sizing: border-box;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      margin: 0;
+      padding: 0;
+      min-height: 100%;
+      background-color: var(--bg-shell);
+      color: var(--ink-primary);
+      font-family: 'Inter', -apple-system, BlinkMacSystemFont, sans-serif;
+      transition: background-color 0.28s cubic-bezier(0.22, 1, 0.36, 1), color 0.28s ease;
+      overflow-x: hidden;
+    }
+
+    /* Subtle tactile ABS / archival paper micro-grain overlay */
+    .shell-grain {
+      position: fixed;
+      inset: 0;
+      pointer-events: none;
+      z-index: 50;
+      opacity: var(--grain-opacity);
+      background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noiseFilter'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noiseFilter)'/%3E%3C/svg%3E");
+    }
+
+    .font-display {
+      font-family: 'Plus Jakarta Sans', 'Inter', sans-serif;
+      letter-spacing: -0.03em;
+    }
+
+    .font-mono-tech {
+      font-family: 'JetBrains Mono', monospace;
+    }
+
+    /* ==========================================================================
+       TACTILE MECHANICAL BUTTON & MODULE PHYSICS
+       ========================================================================== */
+    .tactile-btn {
+      transition: transform 0.12s cubic-bezier(0.2, 0.8, 0.2, 1),
+                  background-color 0.18s ease,
+                  box-shadow 0.12s ease,
+                  opacity 0.18s ease;
+      box-shadow: var(--shadow-pill);
+      user-select: none;
+    }
+
+    .tactile-btn:hover {
+      transform: translateY(-1px);
+    }
+
+    .tactile-btn:active {
+      transform: translateY(1.5px) scale(0.992);
+      box-shadow: 0 0 0 rgba(18, 18, 18, 0.2);
+    }
+
+    .tactile-module {
+      transition: transform 0.18s cubic-bezier(0.22, 1, 0.36, 1),
+                  background-color 0.2s ease,
+                  box-shadow 0.2s ease;
+      box-shadow: var(--shadow-hardware);
+    }
+
+    .tactile-module-interactive:hover {
+      transform: translateY(-2px);
+    }
+
+    .tactile-module-interactive:active {
+      transform: translateY(1px) scale(0.995);
+    }
+
+    /* Vermilion & Stone Surface Helpers */
+    .bg-vermilion {
+      background-color: var(--vermilion);
+      color: #121212;
+    }
+
+    .bg-vermilion:hover {
+      background-color: var(--vermilion-hover);
+    }
+
+    .bg-vermilion-static {
+      background-color: var(--vermilion);
+      color: #121212;
+    }
+
+    .bg-stone {
+      background-color: var(--stone-surface);
+      color: var(--ink-primary);
+    }
+
+    .bg-stone:hover {
+      background-color: var(--stone-hover);
+    }
+
+    .bg-obsidian {
+      background-color: var(--obsidian);
+      color: var(--cream-led);
+    }
+
+    /* Double Horizontal Header Rule */
+    .double-rule-band {
+      border-top: 1.5px solid var(--rule-color);
+      border-bottom: 1.5px solid var(--rule-color);
+      transition: border-color 0.28s ease;
+    }
+
+    /* Navigation active state */
+    .nav-link {
+      position: relative;
+      padding: 4px 2px;
+      color: var(--ink-primary);
+      opacity: 0.72;
+      transition: opacity 0.18s ease;
+    }
+
+    .nav-link:hover,
+    .nav-link.active {
+      opacity: 1;
+    }
+
+    .nav-link.active::after {
+      content: '';
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: -2px;
+      height: 2px;
+      background-color: var(--vermilion);
+      border-radius: 2px;
+    }
+
+    /* ==========================================================================
+       CASSETTE REEL & ANIMATION KEYFRAMES
+       ========================================================================== */
+    @keyframes spinReel {
+      from { transform: rotate(0deg); }
+      to { transform: rotate(360deg); }
+    }
+
+    .reel-spinning {
+      animation: spinReel 2.4s linear infinite;
+    }
+
+    .reel-spinning-fast {
+      animation: spinReel 1.1s linear infinite;
+    }
+
+    @keyframes viewFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(8px);
+      }
+      to {
+        opacity: 1;
+        transform: translateY(0);
+      }
+    }
+
+    .view-enter {
+      animation: viewFadeIn 0.28s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes checkDraw {
+      from {
+        stroke-dashoffset: 64;
+      }
+      to {
+        stroke-dashoffset: 0;
+      }
+    }
+
+    .animate-check {
+      stroke-dasharray: 64;
+      stroke-dashoffset: 0;
+      animation: checkDraw 0.45s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes recPulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.35; transform: scale(0.86); }
+    }
+
+    .rec-dot {
+      animation: recPulse 1s ease-in-out infinite;
+    }
+
+    /* Drag-over highlight on Studio Upload Card */
+    .drop-active {
+      outline: 2.5px dashed #121212;
+      outline-offset: -8px;
+      background-color: var(--vermilion-hover) !important;
+    }
+
+    /* Custom Waveform Bar Transitions */
+    .wave-bar {
+      transition: background-color 0.08s linear, height 0.16s ease;
+    }
+  </style>
+</head>
+
+<body class="antialiased selection:bg-[#C9332B] selection:text-[#F2EFE9]">
+  <!-- Subtle tactile shell grain -->
+  <div class="shell-grain" aria-hidden="true"></div>
+
+  <!-- Main Responsive Hardware Deck Container -->
+  <div class="min-h-screen flex flex-col justify-between max-w-5xl mx-auto px-5 sm:px-8 md:px-12 py-6 sm:py-9">
+
+    <!-- ========================================================================
+         PERSISTENT HEADER (Matches TuneWeaver 2.0 Double-Rule Architecture)
+         ======================================================================== -->
+    <header class="w-full mb-7 sm:mb-9">
+      <!-- Top Row: Wordmark + Live Cassette Reel Emblem + Hardware Switches -->
+      <div class="flex flex-wrap items-center justify-between gap-3 pb-2.5">
+        <div class="flex items-center gap-3.5">
+          <button
+            type="button"
+            onclick="navigateTo('studio')"
+            class="font-display text-2xl sm:text-[28px] font-extrabold tracking-tight text-left focus:outline-none hover:opacity-85 transition-opacity"
+          >
+            TuneWeaver 2.0
+          </button>
+
+          <!-- Compact Cassette Dual-Reel Emblem & Live Tape Counter -->
+          <div
+            class="inline-flex items-center gap-2 px-2.5 py-1 rounded-full border border-[var(--rule-color)]/30 bg-[var(--bg-shell-elevated)]/70"
+            title="Cassette Transport Status"
+          >
+            <!-- Miniature Dual Cassette Spools SVG -->
+            <svg width="26" height="14" viewBox="0 0 26 14" fill="none" aria-hidden="true">
+              <rect x="0.75" y="0.75" width="24.5" height="12.5" rx="3" stroke="currentColor" stroke-width="1.2"/>
+              <g id="header-spool-left" style="transform-origin: 7px 7px;">
+                <circle cx="7" cy="7" r="3.2" stroke="currentColor" stroke-width="1.2"/>
+                <line x1="7" y1="3.8" x2="7" y2="10.2" stroke="currentColor" stroke-width="1"/>
+                <line x1="3.8" y1="7" x2="10.2" y2="7" stroke="currentColor" stroke-width="1"/>
+              </g>
+              <g id="header-spool-right" style="transform-origin: 19px 7px;">
+                <circle cx="19" cy="7" r="3.2" stroke="currentColor" stroke-width="1.2"/>
+                <line x1="19" y1="3.8" x2="19" y2="10.2" stroke="currentColor" stroke-width="1"/>
+                <line x1="15.8" y1="7" x2="22.2" y2="7" stroke="currentColor" stroke-width="1"/>
+              </g>
+              <line x1="10.2" y1="7" x2="15.8" y2="7" stroke="#C9332B" stroke-width="1.2"/>
+            </svg>
+            <span id="tape-counter" class="font-mono-tech text-[11px] font-medium tracking-wider uppercase">
+              TAPE A · 00:00
+            </span>
+          </div>
+        </div>
+
+        <!-- Hardware Rocker Switches: Mechanical Click SFX & Shell Theme -->
+        <div class="flex items-center gap-2">
+          <button
+            id="sfx-toggle-btn"
+            type="button"
+            onclick="toggleSfx()"
+            class="font-mono-tech text-[10px] sm:text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full border border-[var(--rule-color)]/35 hover:border-[var(--rule-color)] transition-colors flex items-center gap-1.5"
+            title="Toggle tactile switch sound effects"
+          >
+            <span id="sfx-led" class="w-1.5 h-1.5 rounded-full bg-[#C9332B]"></span>
+            <span id="sfx-label">SFX ON</span>
+          </button>
+
+          <button
+            id="theme-toggle-btn"
+            type="button"
+            onclick="toggleTheme()"
+            class="font-mono-tech text-[10px] sm:text-[11px] uppercase tracking-wider px-2.5 py-1 rounded-full border border-[var(--rule-color)]/35 hover:border-[var(--rule-color)] transition-colors flex items-center gap-1.5"
+            title="Switch between Putty Shell and Type-IV Dark Deck"
+          >
+            <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
+            <span id="theme-label">PUTTY SHELL</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Double Horizontal Black Rule with Right-Aligned Navigation -->
+      <nav class="double-rule-band flex items-center justify-between py-1.5 px-1" aria-label="Primary Navigation">
+        <span id="header-context-tag" class="font-mono-tech text-[10px] uppercase tracking-widest opacity-60 hidden sm:inline">
+          CASSETTE MELODY WORKSTATION
+        </span>
+        <div class="flex items-center gap-6 sm:gap-9 ml-auto text-xs sm:text-[13px] font-medium">
+          <button type="button" data-nav="studio" onclick="navigateTo('studio')" class="nav-link active">
+            Studio
+          </button>
+          <button type="button" data-nav="instrument" onclick="navigateTo('instrument')" class="nav-link">
+            Instrument
+          </button>
+          <button type="button" data-nav="new-melody" onclick="startNewMelody()" class="nav-link">
+            New melody
+          </button>
+        </div>
+      </nav>
+    </header>
+
+    <!-- ========================================================================
+         MAIN VIEWPORT STAGE (8 Complete Interactive Screens)
+         ======================================================================== -->
+    <main id="app-stage" class="flex-1 flex flex-col justify-center">
+
+      <!-- ====================================================================
+           VIEW 1: STUDIO (Home — 3-Column Symmetric Hardware Module Grid)
+           ==================================================================== -->
+      <section id="view-studio" class="view-enter">
+        <!-- Inline Hardware Status Notification Banner (replaces alert/confirm) -->
+        <div
+          id="studio-status-banner"
+          class="hidden mb-4 px-4 py-2 rounded-full bg-[var(--bg-shell-elevated)] border border-[var(--rule-color)]/25 flex items-center justify-between text-xs font-mono-tech"
+        >
+          <span id="studio-status-text">Ready to capture your melody.</span>
+          <button type="button" onclick="hideStudioBanner()" class="underline ml-3 opacity-75 hover:opacity-100">Dismiss</button>
+        </div>
+
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-5 sm:gap-6 items-stretch">
+
+          <!-- LEFT MODULE: UPLOAD CARD -->
+          <div
+            id="upload-dropzone"
+            ondragover="handleDragOver(event)"
+            ondragleave="handleDragLeave(event)"
+            ondrop="handleFileDrop(event)"
+            class="tactile-module tactile-module-interactive bg-vermilion rounded-[28px] p-6 sm:p-7 flex flex-col items-center justify-between min-h-[290px] sm:min-h-[340px] relative cursor-pointer"
+            onclick="triggerFileInput(event)"
+          >
+            <input
+              id="audio-file-input"
+              type="file"
+              accept=".wav,.mp3,.m4a,.ogg,audio/*"
+              class="hidden"
+              onchange="handleFileSelected(event)"
+            />
+
+            <span class="font-mono-tech text-[10px] uppercase tracking-widest text-[#121212]/70 self-start">
+              IN · A
+            </span>
+
+            <!-- Center Matte-Black Circle with Upload Arrow -->
+            <div class="flex flex-col items-center my-auto">
+              <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-[#121212] flex items-center justify-center shadow-inner transition-transform duration-200 group-hover:scale-105">
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9332B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                  <polyline points="17 8 12 3 7 8"/>
+                  <line x1="12" y1="3" x2="12" y2="15"/>
+                </svg>
+              </div>
+              <span class="mt-4 text-lg sm:text-xl font-semibold text-[#121212] tracking-tight">
+                Upload
+              </span>
+              <span class="mt-0.5 font-mono-tech text-[10px] text-[#121212]/75">
+                WAV · MP3 · M4A · OGG
+              </span>
+            </div>
+
+            <!-- Quick Sample Hum Trigger (Prevents dead-ends if user has no audio file handy) -->
+            <button
+              type="button"
+              onclick="event.stopPropagation(); loadSampleHum('upload')"
+              class="mt-3 px-3.5 py-1.5 rounded-full bg-[#121212]/12 hover:bg-[#121212]/20 text-[#121212] font-mono-tech text-[11px] font-medium transition-colors"
+            >
+              or load sample hum →
+            </button>
+          </div>
+
+          <!-- CENTER MODULE: INSTRUMENT SELECTOR + CONTINUOUS-LINE ART + CREATE! -->
+          <div class="flex flex-col justify-between gap-3.5 min-h-[290px] sm:min-h-[340px]">
+            <!-- Top Vermilion Pill Button -->
+            <button
+              type="button"
+              onclick="navigateTo('instrument')"
+              class="tactile-btn bg-vermilion w-full py-3.5 px-5 rounded-full font-semibold text-sm sm:text-[15px] text-[#121212] text-center"
+            >
+              Select your Instrument
+            </button>
+
+            <!-- Middle Vermilion Instrument Showcase Card with Single-Line SVG Artwork -->
+            <div class="tactile-module bg-vermilion-static rounded-[26px] flex-1 p-4 flex flex-col items-center justify-between relative overflow-hidden">
+              <div class="w-full flex items-center justify-between px-1">
+                <button
+                  type="button"
+                  onclick="cycleInstrument(-1)"
+                  aria-label="Previous instrument"
+                  class="w-7 h-7 rounded-full bg-[#121212]/10 hover:bg-[#121212]/20 flex items-center justify-center text-[#121212] transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="15 18 9 12 15 6"/>
+                  </svg>
+                </button>
+                <span class="font-mono-tech text-[10px] uppercase tracking-widest text-[#121212]/70">
+                  PATCH 0<span id="studio-patch-num">1</span>
+                </span>
+                <button
+                  type="button"
+                  onclick="cycleInstrument(1)"
+                  aria-label="Next instrument"
+                  class="w-7 h-7 rounded-full bg-[#121212]/10 hover:bg-[#121212]/20 flex items-center justify-center text-[#121212] transition-colors"
+                >
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                    <polyline points="9 18 15 12 9 6"/>
+                  </svg>
+                </button>
+              </div>
+
+              <!-- Dynamic Continuous Single-Line Instrument SVG Container -->
+              <div
+                id="studio-instrument-svg"
+                onclick="navigateTo('instrument')"
+                class="w-full flex-1 flex items-center justify-center cursor-pointer py-1"
+                title="Click to customize instrument"
+              >
+                <!-- Populated dynamically by renderInstrumentArt() -->
+              </div>
+
+              <div id="studio-instrument-label" class="text-sm sm:text-[15px] font-semibold text-[#121212] lowercase tracking-tight">
+                saxophone
+              </div>
+            </div>
+
+            <!-- Bottom Vermilion Pill Button: create! -->
+            <button
+              type="button"
+              onclick="handleStudioCreate()"
+              class="tactile-btn bg-vermilion w-full py-3.5 px-6 rounded-full font-display font-bold text-xl sm:text-2xl text-[#121212] tracking-tight"
+            >
+              create!
+            </button>
+          </div>
+
+          <!-- RIGHT MODULE: RECORD CARD (With Live Mic Visualizer & Fallback) -->
+          <div
+            id="record-module-card"
+            class="tactile-module tactile-module-interactive bg-vermilion rounded-[28px] p-6 sm:p-7 flex flex-col items-center justify-between min-h-[290px] sm:min-h-[340px] relative cursor-pointer"
+            onclick="handleRecordCardClick()"
+          >
+            <div class="w-full flex items-center justify-between">
+              <span class="font-mono-tech text-[10px] uppercase tracking-widest text-[#121212]/70">
+                MIC · B
+              </span>
+              <span id="rec-live-badge" class="hidden inline-flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-[#121212] text-[#F2EFE9] font-mono-tech text-[10px]">
+                <span class="w-2 h-2 rounded-full bg-[#C9332B] rec-dot"></span>
+                <span id="rec-timer-text">00:00 / 00:12</span>
+              </span>
+            </div>
+
+            <!-- Idle Mic State -->
+            <div id="record-idle-state" class="flex flex-col items-center my-auto">
+              <div class="w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-[#121212] flex items-center justify-center shadow-inner">
+                <svg width="42" height="42" viewBox="0 0 24 24" fill="none" stroke="#C9332B" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                  <path d="M12 2a3 3 0 0 0-3 3v7a3 3 0 0 0 6 0V5a3 3 0 0 0-3-3Z"/>
+                  <path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+                  <line x1="12" y1="19" x2="12" y2="22"/>
+                </svg>
+              </div>
+              <span class="mt-4 text-lg sm:text-xl font-semibold text-[#121212] tracking-tight">
+                Record
+              </span>
+              <span class="mt-0.5 font-mono-tech text-[10px] text-[#121212]/75">
+                HUM OR SING · MAX 12S
+              </span>
+            </div>
+
+            <!-- Active Recording State (Live Level Bars + Stop Button) -->
+            <div id="record-active-state" class="hidden w-full flex-col items-center my-auto">
+              <div class="w-full h-24 rounded-2xl bg-[#121212] px-4 py-3 flex items-center justify-center gap-1.5" id="live-mic-meter">
+                <!-- 16 dynamic level bars populated by JS -->
+              </div>
+              <p class="mt-3 text-xs font-medium text-[#121212] text-center">
+                Hum your melody into the mic...
+              </p>
+              <button
+                type="button"
+                onclick="event.stopPropagation(); stopRecording()"
+                class="tactile-btn mt-3 px-5 py-2 rounded-full bg-[#121212] text-[#F2EFE9] font-semibold text-xs tracking-wide"
+              >
+                Stop &amp; Review
+              </button>
+            </div>
+
+            <span id="record-footer-hint" class="font-mono-tech text-[10px] text-[#121212]/75">
+              TAP TO CAPTURE TAKE
+            </span>
+          </div>
+        </div>
+
+        <!-- ================================================================
+             LANDING PAGE CASSETTE LINER-NOTE PROJECT OVERVIEW
+             ================================================================ -->
+        <article
+          aria-label="About TuneWeaver 2.0"
+          class="mt-7 sm:mt-9 rounded-[24px] border border-[var(--rule-color)] bg-[var(--bg-shell-elevated)]/85 px-6 sm:px-8 py-6 relative shadow-sm"
+        >
+          <!-- Corner Hardware Chassis Screws -->
+          <span aria-hidden="true" class="hidden sm:block w-2 h-2 rounded-full border border-[var(--rule-color)]/45 absolute top-3.5 left-3.5"></span>
+          <span aria-hidden="true" class="hidden sm:block w-2 h-2 rounded-full border border-[var(--rule-color)]/45 absolute top-3.5 right-3.5"></span>
+
+          <!-- Liner-Note Top Index Strip -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pb-3 border-b border-[var(--rule-color)]">
+            <div class="flex items-center gap-2.5">
+              <span class="w-2 h-2 rounded-full bg-[#C9332B]"></span>
+              <span class="font-mono-tech text-[11px] font-semibold uppercase tracking-widest">
+                SIDE A // ABOUT THE PROJECT
+              </span>
+            </div>
+            <span class="font-mono-tech text-[10px] uppercase tracking-wider opacity-65">
+              J-CARD LINER NOTES · NR-OFF
+            </span>
+          </div>
+
+          <!-- Project Summary -->
+          <div class="mt-4 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div class="max-w-2xl">
+              <h2 class="font-display text-lg sm:text-xl font-bold tracking-tight">
+                A tactile melodic sketchpad for fleeting musical ideas.
+              </h2>
+              <p class="mt-1.5 text-xs sm:text-sm leading-relaxed opacity-85">
+                TuneWeaver 2.0 bridges spontaneous vocal humming and studio production. Capture an off-the-cuff melody into your browser, map its pitch contour and rhythm onto expressive acoustic or analog instruments, and export DAW-ready stems in seconds.
+              </p>
+            </div>
+          </div>
+
+          <!-- 3-Column Workflow Summary Grid -->
+          <div class="mt-5 pt-4 border-t border-[var(--rule-color)]/30 grid grid-cols-1 sm:grid-cols-3 gap-4 sm:gap-6">
+            <div>
+              <div class="font-mono-tech text-[11px] font-semibold tracking-wider text-[#C9332B]">
+                01 / CAPTURE
+              </div>
+              <p class="mt-1 text-xs leading-relaxed opacity-80">
+                Hum into your mic or drop in an existing voice memo or audio sample.
+              </p>
+            </div>
+
+            <div>
+              <div class="font-mono-tech text-[11px] font-semibold tracking-wider text-[#C9332B]">
+                02 / WEAVE
+              </div>
+              <p class="mt-1 text-xs leading-relaxed opacity-80">
+                Extract pitch contour and rhythm, re-voicing your idea into expressive instruments.
+              </p>
+            </div>
+
+            <div>
+              <div class="font-mono-tech text-[11px] font-semibold tracking-wider text-[#C9332B]">
+                03 / EXPORT
+              </div>
+              <p class="mt-1 text-xs leading-relaxed opacity-80">
+                Download editable MIDI note data or uncompressed 16-bit WAV stems for your next session.
+              </p>
+            </div>
+          </div>
+
+          <!-- Liner-Note Technical Footer -->
+          <div class="mt-5 pt-3 border-t border-[var(--rule-color)]/20 flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[10px] opacity-65">
+            <span>Built with Web Audio API • Zero-backend browser synthesis • Ready for VS Code &amp; GitHub Pages</span>
+            <span>STEREO / MONO COMPATIBLE</span>
+          </div>
+        </article>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 2: UPLOAD READY (Matches Screenshot 1 Right Panel)
+           ==================================================================== -->
+      <section id="view-upload-ready" class="hidden view-enter">
+        <div class="flex flex-col items-center justify-center py-8 sm:py-12 text-center">
+          <!-- Large Matte-Black Circle with Animated Vermilion Checkmark -->
+          <div class="w-32 h-32 sm:w-36 sm:h-36 rounded-full bg-[#121212] flex items-center justify-center shadow-lg">
+            <svg width="58" height="58" viewBox="0 0 52 52" fill="none">
+              <path
+                id="upload-check-path"
+                class="animate-check"
+                d="M13 27L22 36L40 16"
+                stroke="#C9332B"
+                stroke-width="5.5"
+                stroke-linecap="round"
+                stroke-linejoin="round"
+              />
+            </svg>
+          </div>
+
+          <h1 class="mt-6 font-display text-2xl sm:text-3xl font-bold tracking-tight">
+            File Uploaded!
+          </h1>
+
+          <!-- Uploaded Filename & Duration Pill Badge -->
+          <div class="mt-3 inline-flex items-center gap-2.5 px-4 py-1.5 rounded-full bg-[var(--bg-shell-elevated)] border border-[var(--rule-color)]/25 font-mono-tech text-xs">
+            <span class="w-2 h-2 rounded-full bg-[#C9332B]"></span>
+            <span id="uploaded-file-badge">vocal_hum_sketch.wav · 00:12</span>
+          </div>
+
+          <!-- Vermilion Proceed Pill Button -->
+          <button
+            type="button"
+            onclick="navigateTo('review-take')"
+            class="tactile-btn bg-vermilion mt-7 px-11 py-3.5 rounded-full font-semibold text-base sm:text-lg text-[#121212]"
+          >
+            proceed
+          </button>
+        </div>
+
+        <p class="mt-6 font-mono-tech text-[11px] opacity-65">
+          Audio buffer decoded · Ready for pitch &amp; rhythm review.
+        </p>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 3: CHOOSE INSTRUMENT (Matches Screenshot 5 Left Panel + Full Kit)
+           ==================================================================== -->
+      <section id="view-instrument" class="hidden view-enter">
+        <div class="max-w-3xl">
+          <p class="font-mono-tech text-[11px] uppercase tracking-widest opacity-70">
+            YOUR INSTRUMENT
+          </p>
+          <h1 id="inst-view-title" class="mt-1.5 font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+            Saxophone
+          </h1>
+          <p id="inst-view-subtitle" class="mt-1.5 text-sm sm:text-base opacity-85">
+            Warm, expressive and ready for your melody.
+          </p>
+
+          <!-- Interactive Instrument Selector Pills -->
+          <div id="instrument-selector-pills" class="mt-6 flex flex-wrap gap-2.5">
+            <!-- Populated dynamically by JS -->
+          </div>
+
+          <!-- Two-Column Detail: Continuous Line Preview Card + Walkthrough Steps -->
+          <div class="mt-6 grid grid-cols-1 sm:grid-cols-12 gap-6 items-center">
+            <div class="sm:col-span-5 bg-vermilion-static rounded-[24px] p-5 flex flex-col items-center justify-between min-h-[190px] shadow-sm">
+              <div id="inst-view-svg" class="w-full h-28 flex items-center justify-center">
+                <!-- Continuous line SVG -->
+              </div>
+              <button
+                type="button"
+                onclick="auditionCurrentInstrument()"
+                class="tactile-btn mt-2 px-4 py-1.5 rounded-full bg-[#121212] text-[#F2EFE9] font-mono-tech text-[11px] flex items-center gap-1.5"
+              >
+                <span>▶</span> Audition tone
+              </button>
+            </div>
+
+            <div class="sm:col-span-7 space-y-3.5">
+              <p class="text-xs sm:text-sm opacity-80 font-medium">
+                This walkthrough follows the <span id="inst-walkthrough-name" class="lowercase font-semibold">saxophone</span> journey.
+              </p>
+
+              <ol class="space-y-2.5 text-sm">
+                <li class="flex items-center gap-3">
+                  <span class="font-mono-tech text-xs font-semibold opacity-65">01</span>
+                  <span>Upload a sample or record an idea</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <span class="font-mono-tech text-xs font-semibold opacity-65">02</span>
+                  <span>Create and preview your melody</span>
+                </li>
+                <li class="flex items-center gap-3">
+                  <span class="font-mono-tech text-xs font-semibold opacity-65">03</span>
+                  <span>Explore MIDI and WAV export</span>
+                </li>
+              </ol>
+
+              <div class="pt-3">
+                <button
+                  id="use-instrument-btn"
+                  type="button"
+                  onclick="confirmInstrumentSelection()"
+                  class="tactile-btn bg-vermilion w-full sm:w-auto px-9 py-3.5 rounded-full font-semibold text-sm sm:text-base text-[#121212]"
+                >
+                  Use Saxophone
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 4: REVIEW YOUR TAKE (02 / REVIEW YOUR TAKE)
+           ==================================================================== -->
+      <section id="view-review-take" class="hidden view-enter">
+        <p class="font-mono-tech text-[11px] uppercase tracking-widest opacity-70">
+          02 / REVIEW YOUR TAKE
+        </p>
+        <h1 class="mt-1.5 font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+          Your idea is ready.
+        </h1>
+        <p class="mt-1.5 text-sm sm:text-base opacity-85">
+          Use this take or record again before creating your melody.
+        </p>
+
+        <!-- Wide Vermilion Waveform Card (Clickable to Audition Raw Input) -->
+        <div
+          id="review-waveform-card"
+          onclick="toggleAuditionRawTake()"
+          title="Click to audition your raw recorded/uploaded take"
+          class="tactile-module bg-vermilion-static mt-6 rounded-[26px] px-6 sm:px-8 py-6 cursor-pointer relative overflow-hidden"
+        >
+          <div class="flex items-center justify-between mb-4">
+            <div class="flex items-center gap-2.5">
+              <span class="font-semibold text-sm sm:text-base text-[#121212]">Recorded melody</span>
+              <span id="raw-audition-pill" class="px-2.5 py-0.5 rounded-full bg-[#121212]/12 text-[#121212] font-mono-tech text-[10px]">
+                CLICK TO AUDITION
+              </span>
+            </div>
+            <span id="review-source-tag" class="font-mono-tech text-[10px] uppercase tracking-wider text-[#121212]/75">
+              MIC TAKE
+            </span>
+          </div>
+
+          <!-- 36 Vertical Black Waveform Bars + Duration -->
+          <div class="flex items-center justify-between gap-4 sm:gap-8">
+            <div id="review-waveform-bars" class="flex-1 h-16 flex items-center justify-between gap-[3px] sm:gap-1.5">
+              <!-- 36 vertical black bars rendered by JS -->
+            </div>
+            <span id="review-duration" class="font-mono-tech text-sm sm:text-base font-semibold text-[#121212] shrink-0">
+              00:12
+            </span>
+          </div>
+        </div>
+
+        <!-- Bottom Action Row -->
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex items-center gap-5">
+            <button
+              type="button"
+              onclick="handleRecordAgain()"
+              class="tactile-btn bg-stone px-7 py-3 rounded-full font-semibold text-sm"
+            >
+              Record again
+            </button>
+            <button
+              type="button"
+              onclick="navigateTo('instrument')"
+              id="review-instrument-label"
+              class="font-semibold text-sm sm:text-base hover:underline"
+              title="Change instrument"
+            >
+              Saxophone
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onclick="startWeavingProcess()"
+            class="tactile-btn bg-vermilion px-9 py-3 rounded-full font-semibold text-sm sm:text-base text-[#121212]"
+          >
+            Create melody
+          </button>
+        </div>
+
+        <p id="review-footnote" class="mt-5 font-mono-tech text-[11px] opacity-65">
+          Captured audio contour ready for harmonic weaving.
+        </p>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 5: PROCESSING (03 / WEAVING YOUR MELODY)
+           ==================================================================== -->
+      <section id="view-processing" class="hidden view-enter">
+        <p class="font-mono-tech text-[11px] uppercase tracking-widest opacity-70">
+          03 / WEAVING YOUR MELODY
+        </p>
+        <h1 class="mt-1.5 font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+          A little hum. A new sound.
+        </h1>
+        <p class="mt-1.5 text-sm sm:text-base opacity-85">
+          Finding the pitch, rhythm and shape of your idea.
+        </p>
+
+        <!-- Wide Vermilion Status Module with Spinning Cassette Reels -->
+        <div class="tactile-module bg-vermilion-static mt-6 rounded-[26px] px-6 sm:px-8 py-7 flex flex-col sm:flex-row sm:items-center justify-between gap-6">
+          <div class="space-y-2.5 text-base sm:text-lg font-semibold text-[#121212]">
+            <div id="proc-step-1" class="flex items-center gap-2.5 transition-opacity duration-300 opacity-35">
+              <span class="w-2 h-2 rounded-full bg-[#121212]"></span>
+              <span>Pitch detected</span>
+            </div>
+            <div id="proc-step-2" class="flex items-center gap-2.5 transition-opacity duration-300 opacity-35">
+              <span class="w-2 h-2 rounded-full bg-[#121212]"></span>
+              <span>Rhythm mapped</span>
+            </div>
+            <div id="proc-step-3" class="flex items-center gap-2.5 transition-opacity duration-300 opacity-35">
+              <span class="w-2 h-2 rounded-full bg-[#121212]"></span>
+              <span id="proc-step-3-text">Rendering your instrument...</span>
+            </div>
+          </div>
+
+          <!-- Dual Spinning Cassette Tape Reels Graphic -->
+          <div class="flex items-center gap-4 self-end sm:self-center bg-[#121212]/10 px-5 py-3 rounded-2xl">
+            <svg width="42" height="42" viewBox="0 0 42 42" fill="none" class="reel-spinning-fast">
+              <circle cx="21" cy="21" r="18" stroke="#121212" stroke-width="2.2"/>
+              <circle cx="21" cy="21" r="6" stroke="#121212" stroke-width="2"/>
+              <line x1="21" y1="3" x2="21" y2="15" stroke="#121212" stroke-width="2"/>
+              <line x1="21" y1="27" x2="21" y2="39" stroke="#121212" stroke-width="2"/>
+              <line x1="3" y1="21" x2="15" y2="21" stroke="#121212" stroke-width="2"/>
+              <line x1="27" y1="21" x2="39" y2="21" stroke="#121212" stroke-width="2"/>
+            </svg>
+            <div class="h-0.5 w-8 bg-[#121212]"></div>
+            <svg width="42" height="42" viewBox="0 0 42 42" fill="none" class="reel-spinning-fast">
+              <circle cx="21" cy="21" r="18" stroke="#121212" stroke-width="2.2"/>
+              <circle cx="21" cy="21" r="6" stroke="#121212" stroke-width="2"/>
+              <line x1="21" y1="3" x2="21" y2="15" stroke="#121212" stroke-width="2"/>
+              <line x1="21" y1="27" x2="21" y2="39" stroke="#121212" stroke-width="2"/>
+              <line x1="3" y1="21" x2="15" y2="21" stroke="#121212" stroke-width="2"/>
+              <line x1="27" y1="21" x2="39" y2="21" stroke="#121212" stroke-width="2"/>
+            </svg>
+          </div>
+        </div>
+
+        <!-- Horizontal Black/Stone Progress Bar -->
+        <div class="mt-5 w-full h-1.5 rounded-full bg-[var(--stone-surface)] overflow-hidden">
+          <div id="processing-progress-bar" class="h-full bg-[var(--ink-primary)] rounded-full transition-all duration-100" style="width: 0%;"></div>
+        </div>
+
+        <!-- Cancel Action & Status Text -->
+        <div class="mt-5 flex flex-wrap items-center gap-5">
+          <button
+            type="button"
+            onclick="cancelWeaving()"
+            class="tactile-btn bg-stone px-8 py-2.5 rounded-full font-semibold text-sm"
+          >
+            Cancel
+          </button>
+          <span class="font-mono-tech text-xs opacity-75">
+            Synthesizing <span id="proc-inst-label">Saxophone</span> tape master...
+          </span>
+        </div>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 6: YOUR MELODY & PLAYBACK PREVIEW (04 / YOUR MELODY)
+           Matches Screenshot 3 (Idle & Active Playback States)
+           ==================================================================== -->
+      <section id="view-your-melody" class="hidden view-enter">
+        <p class="font-mono-tech text-[11px] uppercase tracking-widest opacity-70">
+          04 / YOUR MELODY
+        </p>
+        <h1 class="mt-1.5 font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+          From your hum to something new.
+        </h1>
+        <p class="mt-1.5 text-sm sm:text-base opacity-85">
+          A melody shaped by your idea. Preview it, then take it to your next session.
+        </p>
+
+        <!-- High-Contrast Obsidian Black Cassette-Window Card -->
+        <div class="tactile-module bg-obsidian mt-6 rounded-[26px] px-6 sm:px-8 py-6">
+          <div class="flex items-center justify-between mb-5">
+            <span class="font-semibold text-sm sm:text-base text-[#F2EFE9]">Your melody</span>
+            <span id="melody-card-instrument" class="text-xs sm:text-sm font-medium text-[#F2EFE9]/80">
+              Saxophone
+            </span>
+          </div>
+
+          <!-- 42 Vertical Waveform Bars (Vermilion -> Warm Cream #F2EFE9 as played) -->
+          <div
+            id="melody-waveform-bars"
+            onclick="seekMelodyWaveform(event)"
+            title="Click anywhere on the waveform to seek"
+            class="h-16 flex items-center justify-between gap-[2px] sm:gap-1.5 cursor-pointer select-none"
+          >
+            <!-- 42 bars generated by JS -->
+          </div>
+
+          <!-- Horizontal Red Progress Indicator Bar Underneath -->
+          <div
+            onclick="seekMelodyWaveform(event)"
+            class="mt-5 w-full h-[3px] rounded-full bg-[#F2EFE9]/25 overflow-hidden cursor-pointer"
+          >
+            <div id="melody-progress-line" class="h-full bg-[#C9332B] rounded-full" style="width: 0%;"></div>
+          </div>
+        </div>
+
+        <!-- Bottom Controls: Play/Pause Preview, Start Over, Export Melody -->
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+          <div class="flex flex-wrap items-center gap-3.5">
+            <button
+              id="play-preview-btn"
+              type="button"
+              onclick="toggleMelodyPlayback()"
+              class="tactile-btn bg-vermilion px-8 py-3 rounded-full font-semibold text-sm sm:text-base text-[#121212] min-w-[152px]"
+            >
+              Play preview
+            </button>
+            <button
+              type="button"
+              onclick="startNewMelody()"
+              class="tactile-btn bg-stone px-7 py-3 rounded-full font-semibold text-sm sm:text-base"
+            >
+              Start over
+            </button>
+          </div>
+
+          <button
+            type="button"
+            onclick="goToExportPreview()"
+            class="tactile-btn bg-vermilion px-8 py-3 rounded-full font-semibold text-sm sm:text-base text-[#121212]"
+          >
+            Export melody
+          </button>
+        </div>
+
+        <p id="playback-status-caption" class="mt-5 font-mono-tech text-[11px] opacity-65">
+          Web Audio synthesizer armed · Tap Play preview to audition your woven track.
+        </p>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 7: EXPORT PREVIEW (05 / TAKE IT FURTHER)
+           Matches Screenshot 4 Left Panel & Screenshot 5 Right Panel
+           ==================================================================== -->
+      <section id="view-export-preview" class="hidden view-enter">
+        <p class="font-mono-tech text-[11px] uppercase tracking-widest opacity-70">
+          05 / TAKE IT FURTHER
+        </p>
+        <h1 class="mt-1.5 font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+          Your melody. Your next move.
+        </h1>
+        <p class="mt-1.5 text-sm sm:text-base opacity-85">
+          Choose an export format for your next music session.
+        </p>
+
+        <!-- Two Large Selectable Format Cards -->
+        <div class="mt-6 grid grid-cols-1 sm:grid-cols-2 gap-4 sm:gap-5">
+          <!-- MIDI Format Card -->
+          <button
+            id="format-card-midi"
+            type="button"
+            onclick="selectExportFormat('MIDI')"
+            class="tactile-module tactile-module-interactive bg-vermilion-static rounded-[24px] p-6 sm:p-7 text-left transition-colors"
+          >
+            <div class="font-display text-2xl sm:text-[26px] font-extrabold tracking-tight">
+              MIDI
+            </div>
+            <p class="mt-1.5 text-sm opacity-90">
+              Editable notes for your DAW.
+            </p>
+          </button>
+
+          <!-- WAV Format Card -->
+          <button
+            id="format-card-wav"
+            type="button"
+            onclick="selectExportFormat('WAV')"
+            class="tactile-module tactile-module-interactive bg-stone rounded-[24px] p-6 sm:p-7 text-left transition-colors"
+          >
+            <div class="font-display text-2xl sm:text-[26px] font-extrabold tracking-tight">
+              WAV
+            </div>
+            <p class="mt-1.5 text-sm opacity-90">
+              Uncompressed audio.
+            </p>
+          </button>
+        </div>
+
+        <!-- Dynamic Selected Format Status Line -->
+        <div class="mt-5 flex items-center gap-8 text-sm">
+          <span class="opacity-80">Selected format</span>
+          <span id="selected-format-readout" class="font-display font-extrabold text-base">MIDI</span>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="mt-5 flex flex-wrap items-center justify-between gap-4">
+          <button
+            type="button"
+            onclick="navigateTo('your-melody')"
+            class="tactile-btn bg-stone px-7 py-3 rounded-full font-semibold text-sm sm:text-base"
+          >
+            Back to melody
+          </button>
+
+          <button
+            type="button"
+            onclick="navigateTo('export-ready')"
+            class="tactile-btn bg-vermilion px-9 py-3 rounded-full font-semibold text-sm sm:text-base text-[#121212]"
+          >
+            Prepare export
+          </button>
+        </div>
+
+        <p class="mt-5 font-mono-tech text-[11px] opacity-65">
+          Standard MIDI (.mid) &amp; 16-bit 44.1kHz PCM (.wav) generators ready.
+        </p>
+      </section>
+
+      <!-- ====================================================================
+           VIEW 8: EXPORT READY (06 / READY FOR YOUR NEXT SESSION)
+           Matches Screenshot 4 Right Panel & Screenshot 6
+           ==================================================================== -->
+      <section id="view-export-ready" class="hidden view-enter">
+        <p class="font-mono-tech text-[11px] uppercase tracking-widest opacity-70">
+          06 / READY FOR YOUR NEXT SESSION
+        </p>
+        <h1 class="mt-1.5 font-display text-3xl sm:text-4xl font-extrabold tracking-tight">
+          Keep the idea moving.
+        </h1>
+        <p class="mt-1.5 text-sm sm:text-base opacity-85">
+          Your export selection is ready to review.
+        </p>
+
+        <!-- Wide Vermilion Export Summary Card + Real Binary File Download -->
+        <div class="tactile-module bg-vermilion-static mt-6 rounded-[26px] px-6 sm:px-8 py-6 sm:py-7 flex flex-col sm:flex-row sm:items-center justify-between gap-5">
+          <div>
+            <div class="font-bold text-base sm:text-lg text-[#121212]">
+              Melody export preview
+            </div>
+            <div id="export-summary-instrument" class="mt-2 text-sm sm:text-base font-medium text-[#121212]">
+              Saxophone
+            </div>
+          </div>
+
+          <div class="flex items-center gap-4 sm:gap-6">
+            <span id="export-summary-format" class="font-display font-extrabold text-lg sm:text-xl text-[#121212]">
+              MIDI
+            </span>
+            <button
+              id="download-export-btn"
+              type="button"
+              onclick="downloadExportedFile()"
+              class="tactile-btn px-5 py-2.5 rounded-full bg-[#121212] text-[#F2EFE9] font-mono-tech text-xs font-medium flex items-center gap-2"
+            >
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/>
+                <polyline points="7 10 12 15 17 10"/>
+                <line x1="12" y1="15" x2="12" y2="3"/>
+              </svg>
+              <span id="download-btn-label">Download .MID</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- Bottom Controls -->
+        <div class="mt-6 flex flex-wrap items-center justify-between gap-4">
+          <button
+            type="button"
+            onclick="navigateTo('your-melody')"
+            class="tactile-btn bg-stone px-7 py-3 rounded-full font-semibold text-sm sm:text-base"
+          >
+            Back to melody
+          </button>
+
+          <button
+            type="button"
+            onclick="startNewMelody()"
+            class="tactile-btn bg-vermilion px-8 py-3 rounded-full font-semibold text-sm sm:text-base text-[#121212]"
+          >
+            Make another melody
+          </button>
+        </div>
+
+        <p id="export-download-feedback" class="mt-5 font-mono-tech text-[11px] opacity-65">
+          Click Download to save a playable file directly to your session folder.
+        </p>
+      </section>
+
+    </main>
+
+    <!-- Subtle Hardware Serial Footer -->
+    <footer class="mt-10 pt-4 border-t border-[var(--rule-color)]/20 flex flex-wrap items-center justify-between gap-2 font-mono-tech text-[10px] opacity-55">
+      <span>TW-2026 · ANALOG-DIGITAL MELODY WEAVER</span>
+      <span id="footer-session-spec">44.1KHZ / 16-BIT PCM · TYPE-I PUTTY SHELL</span>
+    </footer>
+  </div>
+
+  <!-- ==========================================================================
+       APPLICATION LOGIC: STATE, CONTINUOUS-LINE SVGs, WEB AUDIO ENGINE & EXPORTERS
+       ========================================================================== -->
+  <script>
+    /**
+     * Instrument Patch Definitions
+     * Includes continuous single-line SVG paths, GM MIDI program numbers,
+     * and Web Audio API synthesis parameters.
+     */
+    const INSTRUMENTS = [
+      {
+        id: 'saxophone',
+        name: 'Saxophone',
+        subtitle: 'Warm, expressive and ready for your melody.',
+        gmProgram: 65, // Alto Sax
+        waveType: 'sawtooth',
+        subWave: 'triangle',
+        filterFreq: 1350,
+        filterQ: 2.8,
+        attack: 0.065,
+        release: 0.16,
+        vibratoRate: 5.2,
+        vibratoDepth: 6,
+        // Continuous single-line saxophone contour entering left and exiting right
+        svg: `
+          <svg viewBox="0 0 240 120" class="w-48 sm:w-56 h-24 sm:h-28 overflow-visible" fill="none">
+            <path
+              d="M 8 66 C 28 66, 44 74, 62 68 C 76 63, 84 48, 96 42 L 106 37 C 110 35, 114 38, 112 42 L 103 52 C 98 58, 102 68, 108 82 C 113 94, 122 100, 130 96 C 138 92, 137 78, 133 65 L 122 33 C 119 24, 125 18, 134 21 L 146 25 C 149 26, 148 30, 144 29 L 132 26 C 127 25, 126 29, 128 35 L 141 72 C 146 86, 144 103, 131 107 C 117 111, 105 99, 98 83 L 88 59 C 85 52, 91 49, 95 55 L 111 85 C 116 94, 126 95, 131 87 C 135 80, 131 68, 126 55 C 133 52, 143 44, 152 34 C 158 27, 165 30, 162 38 C 158 48, 155 56, 164 58 C 176 61, 198 52, 232 56"
+              stroke="#121212"
+              stroke-width="1.65"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        `
+      },
+      {
+        id: 'synth',
+        name: 'Analog Synth',
+        subtitle: 'Tape-saturated polysynth oscillators with warm filter sweep.',
+        gmProgram: 81, // Lead 2 (sawtooth)
+        waveType: 'sawtooth',
+        subWave: 'square',
+        filterFreq: 1850,
+        filterQ: 4.2,
+        attack: 0.025,
+        release: 0.22,
+        vibratoRate: 4.0,
+        vibratoDepth: 4,
+        svg: `
+          <svg viewBox="0 0 240 120" class="w-48 sm:w-56 h-24 sm:h-28 overflow-visible" fill="none">
+            <path
+              d="M 8 68 L 44 68 L 54 40 L 186 40 L 196 68 L 196 86 L 44 86 L 44 68 L 196 68 M 66 54 A 5 5 0 1 1 76 54 A 5 5 0 1 1 66 54 M 90 54 A 5 5 0 1 1 100 54 A 5 5 0 1 1 90 54 M 116 50 L 174 50 L 174 58 L 116 58 Z M 66 68 L 66 86 M 84 68 L 84 86 M 102 68 L 102 86 M 120 68 L 120 86 M 138 68 L 138 86 M 156 68 L 156 86 M 174 68 L 174 86 M 196 74 C 212 74, 222 64, 232 64"
+              stroke="#121212"
+              stroke-width="1.65"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        `
+      },
+      {
+        id: 'piano',
+        name: 'Electric Piano',
+        subtitle: 'Warm vintage electro-mechanical tines with gentle bell overtones.',
+        gmProgram: 4, // Electric Piano 1
+        waveType: 'triangle',
+        subWave: 'sine',
+        filterFreq: 1180,
+        filterQ: 1.4,
+        attack: 0.012,
+        release: 0.38,
+        vibratoRate: 3.2,
+        vibratoDepth: 2.5,
+        svg: `
+          <svg viewBox="0 0 240 120" class="w-48 sm:w-56 h-24 sm:h-28 overflow-visible" fill="none">
+            <path
+              d="M 8 74 L 54 74 L 54 44 C 54 26, 86 24, 108 38 C 128 50, 152 44, 174 54 C 184 58, 188 66, 188 74 L 54 74 L 54 86 L 188 86 L 188 74 M 72 74 L 72 98 M 172 74 L 172 98 M 104 42 L 136 66 M 188 78 C 206 78, 218 68, 232 68"
+              stroke="#121212"
+              stroke-width="1.65"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        `
+      },
+      {
+        id: 'flute',
+        name: 'Concert Flute',
+        subtitle: 'Airy breath-driven harmonic tone with lyrical high register.',
+        gmProgram: 73, // Flute
+        waveType: 'sine',
+        subWave: 'triangle',
+        filterFreq: 1950,
+        filterQ: 1.6,
+        attack: 0.075,
+        release: 0.18,
+        vibratoRate: 5.5,
+        vibratoDepth: 5.5,
+        svg: `
+          <svg viewBox="0 0 240 120" class="w-48 sm:w-56 h-24 sm:h-28 overflow-visible" fill="none">
+            <path
+              d="M 8 64 L 44 64 L 44 58 L 196 58 L 196 66 L 44 66 L 44 64 M 64 58 A 4 4 0 1 1 72 58 M 92 58 A 3 3 0 1 1 98 58 M 112 58 A 3 3 0 1 1 118 58 M 132 58 A 3 3 0 1 1 138 58 M 156 58 A 3 3 0 1 1 162 58 M 176 58 A 3 3 0 1 1 182 58 M 196 62 C 210 62, 220 55, 232 55"
+              stroke="#121212"
+              stroke-width="1.65"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        `
+      },
+      {
+        id: 'guitar',
+        name: 'Acoustic Guitar',
+        subtitle: 'Intimate fingerstyle warmth with woody acoustic resonance.',
+        gmProgram: 24, // Acoustic Guitar (nylon)
+        waveType: 'triangle',
+        subWave: 'sawtooth',
+        filterFreq: 1480,
+        filterQ: 1.8,
+        attack: 0.014,
+        release: 0.34,
+        vibratoRate: 4.2,
+        vibratoDepth: 3.0,
+        svg: `
+          <svg viewBox="0 0 240 120" class="w-48 sm:w-56 h-24 sm:h-28 overflow-visible" fill="none">
+            <path
+              d="M 8 62 L 52 62 C 52 44, 74 42, 84 50 C 92 56, 100 54, 106 46 C 112 38, 122 44, 118 54 L 178 54 L 194 46 C 200 44, 202 52, 196 56 L 194 66 L 118 66 C 122 76, 112 82, 106 74 C 100 66, 92 64, 84 70 C 74 78, 52 76, 52 62 M 74 55 L 74 69 M 90 55 L 90 69 M 196 60 L 232 60"
+              stroke="#121212"
+              stroke-width="1.65"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        `
+      },
+      {
+        id: 'cello',
+        name: 'Solo Cello',
+        subtitle: 'Deep bowed harmonics with rich acoustic body bloom.',
+        gmProgram: 42, // Cello
+        waveType: 'sawtooth',
+        subWave: 'triangle',
+        filterFreq: 1120,
+        filterQ: 3.1,
+        attack: 0.11,
+        release: 0.25,
+        vibratoRate: 5.6,
+        vibratoDepth: 7,
+        svg: `
+          <svg viewBox="0 0 240 120" class="w-48 sm:w-56 h-24 sm:h-28 overflow-visible" fill="none">
+            <path
+              d="M 8 62 L 62 62 C 62 46, 84 44, 94 52 C 102 58, 112 58, 120 50 C 132 38, 162 40, 162 62 C 162 84, 132 86, 120 74 C 112 66, 102 66, 94 72 C 84 80, 62 78, 62 62 L 186 62 C 192 62, 194 56, 189 56 C 184 56, 184 66, 192 66 L 232 66"
+              stroke="#121212"
+              stroke-width="1.65"
+              stroke-linecap="round"
+              stroke-linejoin="round"
+            />
+          </svg>
+        `
+      }
+    ];
+
+    /**
+     * Application State Store
+     */
+    const state = {
+      currentView: 'studio',
+      theme: 'putty', // 'putty' | 'dark'
+      sfxEnabled: true,
+      selectedInstrumentIndex: 0,
+      exportFormat: 'MIDI', // 'MIDI' | 'WAV'
+      takeSource: 'Sample Hum', // 'Mic Take' | 'Uploaded File' | 'Sample Hum'
+      takeFileName: 'vocal_hum_sketch.wav',
+      takeDurationSec: 12,
+      rawAudioBuffer: null,
+      reviewWaveform: [], // 36 normalized heights (0.15 - 1.0)
+      melodyWaveform: [], // 42 normalized heights (0.18 - 1.0)
+      melodyNotes: [], // Array of { midi, start, duration, velocity }
+      // Recording state
+      isRecording: false,
+      mediaRecorder: null,
+      recordingChunks: [],
+      recordingStream: null,
+      recordingTimerId: null,
+      recordingMeterRaf: null,
+      recordingElapsedSec: 0,
+      // Processing state
+      processingTimerId: null,
+      // Playback state
+      isPlayingMelody: false,
+      playbackOffsetSec: 0,
+      playbackStartTimeCtx: 0,
+      playbackRafId: null,
+      activeOscillators: [],
+      isAuditioningRaw: false,
+      rawAuditionSource: null
+    };
+
+    // Shared Web Audio Context
+    let audioCtx = null;
+    function getAudioContext() {
+      if (!audioCtx) {
+        const AudioContextClass = window.AudioContext || window.webkitAudioContext;
+        audioCtx = new AudioContextClass();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+      return audioCtx;
+    }
+
+    /**
+     * Tactile Mechanical Switch Sound Effect (Web Audio API)
+     * Simulates Braun / Nakamichi micro-switch detent click.
+     */
+    function playMechClick(pitchMultiplier = 1.0) {
+      if (!state.sfxEnabled) return;
+      try {
+        const ctx = getAudioContext();
+        const now = ctx.currentTime;
+
+        // Short damped transient pulse
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(520 * pitchMultiplier, now);
+        osc.frequency.exponentialRampToValueAtTime(110 * pitchMultiplier, now + 0.022);
+
+        gain.gain.setValueAtTime(0.08, now);
+        gain.gain.exponentialRampToValueAtTime(0.0001, now + 0.024);
+
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.026);
+      } catch (e) {
+        // Ignore audio errors before user gesture
+      }
+    }
+
+    /**
+     * Header Controls: SFX Toggle & Shell Theme Toggle
+     */
+    function toggleSfx() {
+      state.sfxEnabled = !state.sfxEnabled;
+      const label = document.getElementById('sfx-label');
+      const led = document.getElementById('sfx-led');
+      label.textContent = state.sfxEnabled ? 'SFX ON' : 'SFX OFF';
+      led.style.backgroundColor = state.sfxEnabled ? '#C9332B' : '#7A756D';
+      if (state.sfxEnabled) playMechClick(1.25);
+    }
+
+    function toggleTheme() {
+      playMechClick(0.95);
+      state.theme = state.theme === 'putty' ? 'dark' : 'putty';
+      document.documentElement.setAttribute('data-theme', state.theme === 'dark' ? 'dark' : 'light');
+      document.getElementById('theme-label').textContent =
+        state.theme === 'dark' ? 'TYPE-IV DECK' : 'PUTTY SHELL';
+      document.getElementById('footer-session-spec').textContent =
+        state.theme === 'dark'
+          ? '44.1KHZ / 16-BIT PCM · TYPE-IV METAL DECK'
+          : '44.1KHZ / 16-BIT PCM · TYPE-I PUTTY SHELL';
+    }
+
+    /**
+     * Cassette Reel Spinner & Tape Counter Controller
+     */
+    function setTapeTransportActive(isSpinning) {
+      const leftSpool = document.getElementById('header-spool-left');
+      const rightSpool = document.getElementById('header-spool-right');
+      if (isSpinning) {
+        leftSpool.classList.add('reel-spinning');
+        rightSpool.classList.add('reel-spinning');
+      } else {
+        leftSpool.classList.remove('reel-spinning');
+        rightSpool.classList.remove('reel-spinning');
+      }
+    }
+
+    function updateTapeCounter(seconds) {
+      const clamped = Math.max(0, Math.floor(seconds));
+      const mins = String(Math.floor(clamped / 60)).padStart(2, '0');
+      const secs = String(clamped % 60).padStart(2, '0');
+      document.getElementById('tape-counter').textContent = `TAPE A · ${mins}:${secs}`;
+    }
+
+    function formatTimeMMSS(seconds) {
+      const clamped = Math.max(1, Math.round(seconds));
+      const mins = String(Math.floor(clamped / 60)).padStart(2, '0');
+      const secs = String(clamped % 60).padStart(2, '0');
+      return `${mins}:${secs}`;
+    }
+
+    /**
+     * Multi-View Router
+     */
+    const VIEW_IDS = [
+      'studio',
+      'upload-ready',
+      'instrument',
+      'review-take',
+      'processing',
+      'your-melody',
+      'export-preview',
+      'export-ready'
+    ];
+
+    function navigateTo(viewId, silent = false) {
+      if (!silent) playMechClick(1.0);
+
+      // Stop active playback or raw audition when leaving playback views
+      if (viewId !== 'your-melody' && state.isPlayingMelody) {
+        pauseMelodyPlayback();
+      }
+      if (viewId !== 'review-take' && state.isAuditioningRaw) {
+        stopAuditionRawTake();
+      }
+
+      state.currentView = viewId;
+
+      VIEW_IDS.forEach((id) => {
+        const el = document.getElementById(`view-${id}`);
+        if (!el) return;
+        if (id === viewId) {
+          el.classList.remove('hidden');
+          // Re-trigger subtle entrance animation
+          el.classList.remove('view-enter');
+          void el.offsetWidth;
+          el.classList.add('view-enter');
+        } else {
+          el.classList.add('hidden');
+        }
+      });
+
+      // Update Header Navigation Active Underline
+      document.querySelectorAll('.nav-link').forEach((link) => {
+        const target = link.getAttribute('data-nav');
+        if (
+          (target === 'studio' && viewId === 'studio') ||
+          (target === 'instrument' && viewId === 'instrument')
+        ) {
+          link.classList.add('active');
+        } else {
+          link.classList.remove('active');
+        }
+      });
+
+      // View-specific refresh hooks
+      if (viewId === 'instrument') renderInstrumentScreen();
+      if (viewId === 'review-take') renderReviewTakeScreen();
+      if (viewId === 'your-melody') renderYourMelodyScreen();
+      if (viewId === 'export-preview') renderExportPreviewScreen();
+      if (viewId === 'export-ready') renderExportReadyScreen();
+    }
+
+    function startNewMelody() {
+      playMechClick(0.9);
+      pauseMelodyPlayback();
+      stopAuditionRawTake();
+      if (state.isRecording) stopRecording(true);
+      if (state.processingTimerId) {
+        clearInterval(state.processingTimerId);
+        state.processingTimerId = null;
+      }
+      state.playbackOffsetSec = 0;
+      updateTapeCounter(0);
+      setTapeTransportActive(false);
+      navigateTo('studio', true);
+    }
+
+    /**
+     * Instrument Rendering & Cycling
+     */
+    function getActiveInstrument() {
+      return INSTRUMENTS[state.selectedInstrumentIndex];
+    }
+
+    function updateStudioInstrumentUI() {
+      const inst = getActiveInstrument();
+      document.getElementById('studio-instrument-svg').innerHTML = inst.svg;
+      document.getElementById('studio-instrument-label').textContent = inst.name.toLowerCase();
+      document.getElementById('studio-patch-num').textContent = state.selectedInstrumentIndex + 1;
+    }
+
+    function cycleInstrument(delta) {
+      playMechClick(delta > 0 ? 1.15 : 0.92);
+      const len = INSTRUMENTS.length;
+      state.selectedInstrumentIndex = (state.selectedInstrumentIndex + delta + len) % len;
+      updateStudioInstrumentUI();
+    }
+
+    function renderInstrumentScreen() {
+      const inst = getActiveInstrument();
+      document.getElementById('inst-view-title').textContent = inst.name;
+      document.getElementById('inst-view-subtitle').textContent = inst.subtitle;
+      document.getElementById('inst-view-svg').innerHTML = inst.svg;
+      document.getElementById('inst-walkthrough-name').textContent = inst.name.toLowerCase();
+      document.getElementById('use-instrument-btn').textContent = `Use ${inst.name}`;
+
+      const pillContainer = document.getElementById('instrument-selector-pills');
+      pillContainer.innerHTML = '';
+
+      INSTRUMENTS.forEach((item, idx) => {
+        const isSelected = idx === state.selectedInstrumentIndex;
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `tactile-btn px-4 py-2 rounded-full text-xs sm:text-sm font-semibold transition-colors ${
+          isSelected ? 'bg-vermilion text-[#121212]' : 'bg-stone'
+        }`;
+        btn.textContent = item.name;
+        btn.onclick = () => {
+          playMechClick(1.08);
+          state.selectedInstrumentIndex = idx;
+          updateStudioInstrumentUI();
+          renderInstrumentScreen();
+        };
+        pillContainer.appendChild(btn);
+      });
+    }
+
+    function confirmInstrumentSelection() {
+      updateStudioInstrumentUI();
+      // If a take is already loaded, return to Review Take; otherwise return to Studio
+      if (state.rawAudioBuffer) {
+        navigateTo('review-take');
+      } else {
+        navigateTo('studio');
+      }
+    }
+
+    function auditionCurrentInstrument() {
+      playMechClick(1.1);
+      const ctx = getAudioContext();
+      const inst = getActiveInstrument();
+      const notes = [62, 66, 69, 74]; // Warm D major9 arpeggio
+      notes.forEach((midi, i) => {
+        scheduleInstrumentNote(ctx, inst, midi, ctx.currentTime + i * 0.22, 0.35, 0.22);
+      });
+    }
+
+    /**
+     * Studio Status Banner Helpers (Clean replacement for alert())
+     */
+    function showStudioBanner(message) {
+      const banner = document.getElementById('studio-status-banner');
+      document.getElementById('studio-status-text').textContent = message;
+      banner.classList.remove('hidden');
+    }
+
+    function hideStudioBanner() {
+      document.getElementById('studio-status-banner').classList.add('hidden');
+    }
+
+    /**
+     * File Upload & Drag-and-Drop Pipeline
+     */
+    function triggerFileInput(event) {
+      if (event.target.closest('button')) return;
+      playMechClick(1.05);
+      document.getElementById('audio-file-input').click();
+    }
+
+    function handleDragOver(event) {
+      event.preventDefault();
+      document.getElementById('upload-dropzone').classList.add('drop-active');
+    }
+
+    function handleDragLeave(event) {
+      event.preventDefault();
+      document.getElementById('upload-dropzone').classList.remove('drop-active');
+    }
+
+    function handleFileDrop(event) {
+      event.preventDefault();
+      document.getElementById('upload-dropzone').classList.remove('drop-active');
+      const file = event.dataTransfer?.files?.[0];
+      if (file) {
+        processUploadedAudioFile(file);
+      }
+    }
+
+    function handleFileSelected(event) {
+      const file = event.target.files?.[0];
+      if (file) {
+        processUploadedAudioFile(file);
+      }
+      event.target.value = '';
+    }
+
+    async function processUploadedAudioFile(file) {
+      playMechClick(1.15);
+      try {
+        const ctx = getAudioContext();
+        const arrayBuffer = await file.arrayBuffer();
+        const audioBuffer = await ctx.decodeAudioData(arrayBuffer);
+
+        state.takeSource = 'Uploaded File';
+        state.takeFileName = file.name;
+        state.takeDurationSec = Math.min(12, Math.max(4, Math.round(audioBuffer.duration)));
+        state.rawAudioBuffer = audioBuffer;
+        state.reviewWaveform = extractWaveformPeaks(audioBuffer, 36);
+        state.melodyNotes = extractMelodyFromBuffer(audioBuffer, state.takeDurationSec);
+        state.melodyWaveform = buildMelodyWaveformFromNotes(state.melodyNotes, 42);
+
+        document.getElementById('uploaded-file-badge').textContent =
+          `${file.name} · ${formatTimeMMSS(state.takeDurationSec)}`;
+        updateTapeCounter(state.takeDurationSec);
+        navigateTo('upload-ready', true);
+      } catch (err) {
+        // Fallback if browser cannot decode exotic codec
+        await loadSampleHum('upload', file.name);
+      }
+    }
+
+    /**
+     * Synthesizes a realistic vocal hum AudioBuffer so sample/fallback takes
+     * have genuine audio playback, waveform analysis, and pitch contours.
+     */
+    async function synthesizeVocalHumBuffer(durationSec = 12) {
+      const sampleRate = 44100;
+      const length = sampleRate * durationSec;
+      const offline = new OfflineAudioContext(1, length, sampleRate);
+
+      // Lyrical vocal hum motif in D Major / Dorian warmth
+      const humPhrases = [
+        { freq: 146.83, t: 0.2, d: 1.1 },  // D3
+        { freq: 164.81, t: 1.4, d: 0.9 },  // E3
+        { freq: 185.00, t: 2.4, d: 1.3 },  // F#3
+        { freq: 220.00, t: 3.9, d: 1.5 },  // A3
+        { freq: 196.00, t: 5.7, d: 1.0 },  // G3
+        { freq: 185.00, t: 6.8, d: 1.1 },  // F#3
+        { freq: 164.81, t: 8.1, d: 1.2 },  // E3
+        { freq: 146.83, t: 9.5, d: 2.0 }   // D3
+      ];
+
+      humPhrases.forEach((p) => {
+        const osc = offline.createOscillator();
+        const filter = offline.createBiquadFilter();
+        const gain = offline.createGain();
+
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(p.freq, p.t);
+        // Subtle natural vocal pitch slide
+        osc.frequency.linearRampToValueAtTime(p.freq * 1.012, p.t + p.d * 0.5);
+        osc.frequency.linearRampToValueAtTime(p.freq * 0.995, p.t + p.d);
+
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(460, p.t); // Closed-mouth "mmm" vocal formant
+
+        gain.gain.setValueAtTime(0.0001, p.t);
+        gain.gain.linearRampToValueAtTime(0.28, p.t + 0.14);
+        gain.gain.setValueAtTime(0.24, p.t + p.d - 0.18);
+        gain.gain.exponentialRampToValueAtTime(0.0001, p.t + p.d);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(offline.destination);
+        osc.start(p.t);
+        osc.stop(p.t + p.d + 0.02);
+      });
+
+      return await offline.startRendering();
+    }
+
+    async function loadSampleHum(targetFlow = 'upload', customFileName = 'vocal_hum_take_01.wav') {
+      playMechClick(1.1);
+      const buffer = await synthesizeVocalHumBuffer(12);
+      state.takeSource = targetFlow === 'upload' ? 'Uploaded File' : 'Sample Hum';
+      state.takeFileName = customFileName;
+      state.takeDurationSec = 12;
+      state.rawAudioBuffer = buffer;
+      state.reviewWaveform = extractWaveformPeaks(buffer, 36);
+      state.melodyNotes = extractMelodyFromBuffer(buffer, 12);
+      state.melodyWaveform = buildMelodyWaveformFromNotes(state.melodyNotes, 42);
+
+      updateTapeCounter(12);
+
+      if (targetFlow === 'upload') {
+        document.getElementById('uploaded-file-badge').textContent = `${customFileName} · 00:12`;
+        navigateTo('upload-ready', true);
+      } else if (targetFlow === 'create') {
+        navigateTo('review-take', true);
+      } else {
+        navigateTo('review-take', true);
+      }
+    }
+
+    /**
+     * Center "create!" Button Handler
+     */
+    function handleStudioCreate() {
+      playMechClick(1.2);
+      if (state.rawAudioBuffer) {
+        startWeavingProcess();
+      } else {
+        loadSampleHum('create', 'studio_hum_idea.wav');
+      }
+    }
+
+    /**
+     * Live Microphone Recording (with graceful automatic fallback)
+     */
+    function handleRecordCardClick() {
+      if (state.isRecording) return;
+      startLiveRecording();
+    }
+
+    async function startLiveRecording() {
+      playMechClick(1.15);
+      hideStudioBanner();
+
+      if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+        showStudioBanner('Microphone API unavailable in this browser — loaded studio hum take.');
+        await loadSampleHum('mic', 'studio_mic_fallback.wav');
+        return;
+      }
+
+      try {
+        const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+        const ctx = getAudioContext();
+        const source = ctx.createMediaStreamSource(stream);
+        const analyser = ctx.createAnalyser();
+        analyser.fftSize = 64;
+        source.connect(analyser);
+
+        state.recordingStream = stream;
+        state.recordingChunks = [];
+        state.isRecording = true;
+        state.recordingElapsedSec = 0;
+
+        // UI Switch to Active Recording Mode
+        document.getElementById('record-idle-state').classList.add('hidden');
+        document.getElementById('record-active-state').classList.remove('hidden');
+        document.getElementById('record-active-state').classList.add('flex');
+        document.getElementById('rec-live-badge').classList.remove('hidden');
+        document.getElementById('record-footer-hint').textContent = 'RECORDING IN PROGRESS';
+        setTapeTransportActive(true);
+
+        // Build 16 live meter bars
+        const meterEl = document.getElementById('live-mic-meter');
+        meterEl.innerHTML = '';
+        for (let i = 0; i < 16; i++) {
+          const bar = document.createElement('div');
+          bar.className = 'w-1.5 rounded-full bg-[#C9332B] transition-all duration-75';
+          bar.style.height = '14%';
+          meterEl.appendChild(bar);
+        }
+
+        const dataArray = new Uint8Array(analyser.frequencyBinCount);
+        const updateMeter = () => {
+          if (!state.isRecording) return;
+          analyser.getByteFrequencyData(dataArray);
+          const bars = meterEl.children;
+          for (let i = 0; i < bars.length; i++) {
+            const val = dataArray[i] || 0;
+            const pct = Math.max(14, Math.min(96, (val / 255) * 100));
+            bars[i].style.height = `${pct}%`;
+          }
+          state.recordingMeterRaf = requestAnimationFrame(updateMeter);
+        };
+        updateMeter();
+
+        const mediaRecorder = new MediaRecorder(stream);
+        state.mediaRecorder = mediaRecorder;
+
+        mediaRecorder.ondataavailable = (e) => {
+          if (e.data && e.data.size > 0) {
+            state.recordingChunks.push(e.data);
+          }
+        };
+
+        mediaRecorder.onstop = async () => {
+          cleanupRecordingUI();
+          if (state.recordingChunks.length === 0) return;
+
+          const blob = new Blob(state.recordingChunks, { type: mediaRecorder.mimeType || 'audio/webm' });
+          try {
+            const arrBuf = await blob.arrayBuffer();
+            const decoded = await ctx.decodeAudioData(arrBuf);
+            state.takeSource = 'Mic Take';
+            state.takeFileName = 'mic_take.webm';
+            state.takeDurationSec = Math.max(3, Math.min(12, Math.round(decoded.duration)));
+            state.rawAudioBuffer = decoded;
+            state.reviewWaveform = extractWaveformPeaks(decoded, 36);
+            state.melodyNotes = extractMelodyFromBuffer(decoded, state.takeDurationSec);
+            state.melodyWaveform = buildMelodyWaveformFromNotes(state.melodyNotes, 42);
+            updateTapeCounter(state.takeDurationSec);
+            navigateTo('review-take', true);
+          } catch (decodeErr) {
+            await loadSampleHum('mic', 'mic_take.wav');
+          }
+        };
+
+        mediaRecorder.start(100);
+
+        // 1-second timer up to 12 seconds max
+        state.recordingTimerId = setInterval(() => {
+          state.recordingElapsedSec += 1;
+          const secStr = String(state.recordingElapsedSec).padStart(2, '0');
+          document.getElementById('rec-timer-text').textContent = `00:${secStr} / 00:12`;
+          updateTapeCounter(state.recordingElapsedSec);
+          if (state.recordingElapsedSec >= 12) {
+            stopRecording();
+          }
+        }, 1000);
+      } catch (err) {
+        // Permission denied or no mic hardware -> seamless fallback
+        cleanupRecordingUI();
+        showStudioBanner('Microphone access not granted — loaded studio vocal hum take instead.');
+        await loadSampleHum('mic', 'studio_hum_take.wav');
+      }
+    }
+
+    function stopRecording(discard = false) {
+      if (!state.isRecording) return;
+      playMechClick(0.95);
+      state.isRecording = false;
+      if (discard) state.recordingChunks = [];
+      if (state.mediaRecorder && state.mediaRecorder.state !== 'inactive') {
+        state.mediaRecorder.stop();
+      }
+      if (state.recordingStream) {
+        state.recordingStream.getTracks().forEach((t) => t.stop());
+        state.recordingStream = null;
+      }
+    }
+
+    function cleanupRecordingUI() {
+      state.isRecording = false;
+      if (state.recordingTimerId) {
+        clearInterval(state.recordingTimerId);
+        state.recordingTimerId = null;
+      }
+      if (state.recordingMeterRaf) {
+        cancelAnimationFrame(state.recordingMeterRaf);
+        state.recordingMeterRaf = null;
+      }
+      setTapeTransportActive(false);
+      document.getElementById('record-idle-state').classList.remove('hidden');
+      document.getElementById('record-active-state').classList.add('hidden');
+      document.getElementById('record-active-state').classList.remove('flex');
+      document.getElementById('rec-live-badge').classList.add('hidden');
+      document.getElementById('rec-timer-text').textContent = '00:00 / 00:12';
+      document.getElementById('record-footer-hint').textContent = 'TAP TO CAPTURE TAKE';
+    }
+
+    function handleRecordAgain() {
+      playMechClick(0.95);
+      stopAuditionRawTake();
+      navigateTo('studio', true);
+    }
+
+    /**
+     * Audio Analysis & Melodic Contour Extraction
+     */
+    function extractWaveformPeaks(audioBuffer, barCount) {
+      const channel = audioBuffer.getChannelData(0);
+      const blockSize = Math.floor(channel.length / barCount);
+      const peaks = [];
+      let maxPeak = 0.001;
+
+      for (let i = 0; i < barCount; i++) {
+        let sum = 0;
+        const start = i * blockSize;
+        for (let j = 0; j < blockSize; j += 8) {
+          const val = Math.abs(channel[start + j] || 0);
+          sum += val * val;
+        }
+        const rms = Math.sqrt(sum / Math.max(1, blockSize / 8));
+        peaks.push(rms);
+        if (rms > maxPeak) maxPeak = rms;
+      }
+
+      // Normalize with tapered ends for sleek cassette waveform silhouette
+      return peaks.map((p, idx) => {
+        const norm = p / maxPeak;
+        const edgeEnvelope = Math.sin((idx / (barCount - 1)) * Math.PI) * 0.25 + 0.75;
+        return Math.max(0.14, Math.min(1.0, norm * edgeEnvelope));
+      });
+    }
+
+    /**
+     * Extracts pitch contour from user audio via zero-crossing / autocorrelation
+     * and quantizes to an expressive D Major Pentatonic / Lydian scale.
+     */
+    function extractMelodyFromBuffer(audioBuffer, totalDurationSec) {
+      const channel = audioBuffer.getChannelData(0);
+      const sampleRate = audioBuffer.sampleRate;
+      const sliceCount = 16;
+      const sliceSamples = Math.floor(channel.length / sliceCount);
+      const stepDuration = totalDurationSec / sliceCount;
+
+      // Expressive D Major / Pentatonic MIDI pool (D4 to A5)
+      const scalePool = [62, 64, 66, 69, 71, 74, 76, 78, 81];
+      const fallbackMotif = [62, 66, 69, 71, 74, 71, 69, 66, 64, 69, 71, 74, 76, 74, 69, 62];
+      const notes = [];
+
+      for (let s = 0; s < sliceCount; s++) {
+        const offset = s * sliceSamples;
+        let energy = 0;
+        let crossings = 0;
+
+        for (let i = 1; i < Math.min(sliceSamples, 4096); i++) {
+          const prev = channel[offset + i - 1] || 0;
+          const curr = channel[offset + i] || 0;
+          energy += curr * curr;
+          if ((prev < 0 && curr >= 0) || (prev >= 0 && curr < 0)) {
+            crossings++;
+          }
+        }
+
+        const rms = Math.sqrt(energy / 4096);
+        let midiNote = fallbackMotif[s % fallbackMotif.length];
+
+        if (rms > 0.015 && crossings > 4) {
+          const estFreq = (crossings * sampleRate) / (2 * 4096);
+          if (estFreq > 75 && estFreq < 900) {
+            const rawMidi = Math.round(69 + 12 * Math.log2(estFreq / 440)) + 12;
+            // Snap to nearest musical scale degree
+            midiNote = scalePool.reduce((prev, curr) =>
+              Math.abs(curr - rawMidi) < Math.abs(prev - rawMidi) ? curr : prev
+            );
+          }
+        }
+
+        // Merge consecutive identical pitches into expressive sustained phrasing
+        const prevNote = notes[notes.length - 1];
+        if (prevNote && prevNote.midi === midiNote && prevNote.duration < stepDuration * 2.2) {
+          prevNote.duration += stepDuration * 0.96;
+        } else {
+          notes.push({
+            midi: midiNote,
+            start: s * stepDuration,
+            duration: stepDuration * 0.92,
+            velocity: Math.min(0.95, Math.max(0.58, 0.55 + rms * 2.5))
+          });
+        }
+      }
+
+      return notes;
+    }
+
+    function buildMelodyWaveformFromNotes(notes, barCount) {
+      const totalDur = state.takeDurationSec || 12;
+      const bars = [];
+      for (let i = 0; i < barCount; i++) {
+        const t = (i / barCount) * totalDur;
+        const activeNote = notes.find((n) => t >= n.start && t <= n.start + n.duration);
+        const taper = Math.sin((i / (barCount - 1)) * Math.PI) * 0.35 + 0.65;
+        if (activeNote) {
+          const pitchFactor = ((activeNote.midi - 60) / 24) * 0.45 + 0.55;
+          bars.push(Math.max(0.18, Math.min(1.0, activeNote.velocity * pitchFactor * taper)));
+        } else {
+          bars.push(Math.max(0.14, 0.22 * taper));
+        }
+      }
+      return bars;
+    }
+
+    /**
+     * View 4: Review Your Take Renderer & Raw Audition
+     */
+    function renderReviewTakeScreen() {
+      const inst = getActiveInstrument();
+      document.getElementById('review-source-tag').textContent = state.takeSource.toUpperCase();
+      document.getElementById('review-duration').textContent = formatTimeMMSS(state.takeDurationSec);
+      document.getElementById('review-instrument-label').textContent = inst.name;
+
+      const container = document.getElementById('review-waveform-bars');
+      container.innerHTML = '';
+
+      const peaks = state.reviewWaveform.length
+        ? state.reviewWaveform
+        : Array.from({ length: 36 }, (_, i) => 0.2 + Math.abs(Math.sin(i * 0.38)) * 0.72);
+
+      peaks.forEach((amp) => {
+        const bar = document.createElement('div');
+        bar.className = 'w-1 sm:w-1.5 rounded-full bg-[#121212] transition-all duration-150';
+        bar.style.height = `${Math.round(amp * 100)}%`;
+        container.appendChild(bar);
+      });
+    }
+
+    function toggleAuditionRawTake() {
+      playMechClick(1.05);
+      if (state.isAuditioningRaw) {
+        stopAuditionRawTake();
+        return;
+      }
+      if (!state.rawAudioBuffer) return;
+
+      const ctx = getAudioContext();
+      const src = ctx.createBufferSource();
+      src.buffer = state.rawAudioBuffer;
+      src.connect(ctx.destination);
+
+      state.isAuditioningRaw = true;
+      state.rawAuditionSource = src;
+      setTapeTransportActive(true);
+      document.getElementById('raw-audition-pill').textContent = 'PLAYING RAW TAKE...';
+
+      src.onended = () => {
+        stopAuditionRawTake();
+      };
+      src.start(0, 0, Math.min(state.takeDurationSec, state.rawAudioBuffer.duration));
+    }
+
+    function stopAuditionRawTake() {
+      if (state.rawAuditionSource) {
+        try {
+          state.rawAuditionSource.stop();
+        } catch (e) {}
+        state.rawAuditionSource = null;
+      }
+      state.isAuditioningRaw = false;
+      setTapeTransportActive(false);
+      const pill = document.getElementById('raw-audition-pill');
+      if (pill) pill.textContent = 'CLICK TO AUDITION';
+    }
+
+    /**
+     * View 5: Processing / Weaving Animation Sequence
+     */
+    function startWeavingProcess() {
+      playMechClick(1.18);
+      navigateTo('processing', true);
+
+      const inst = getActiveInstrument();
+      document.getElementById('proc-inst-label').textContent = inst.name;
+      document.getElementById('proc-step-3-text').textContent = `Rendering your ${inst.name.toLowerCase()}...`;
+
+      const step1 = document.getElementById('proc-step-1');
+      const step2 = document.getElementById('proc-step-2');
+      const step3 = document.getElementById('proc-step-3');
+      const bar = document.getElementById('processing-progress-bar');
+
+      step1.style.opacity = '0.35';
+      step2.style.opacity = '0.35';
+      step3.style.opacity = '0.35';
+      bar.style.width = '0%';
+      setTapeTransportActive(true);
+
+      let progress = 0;
+      if (state.processingTimerId) clearInterval(state.processingTimerId);
+
+      state.processingTimerId = setInterval(() => {
+        progress += 2.5;
+        bar.style.width = `${Math.min(100, progress)}%`;
+
+        if (progress >= 15) step1.style.opacity = '1';
+        if (progress >= 48) step2.style.opacity = '1';
+        if (progress >= 78) step3.style.opacity = '1';
+
+        if (progress >= 100) {
+          clearInterval(state.processingTimerId);
+          state.processingTimerId = null;
+          setTapeTransportActive(false);
+          state.playbackOffsetSec = 0;
+          navigateTo('your-melody', true);
+        }
+      }, 55);
+    }
+
+    function cancelWeaving() {
+      playMechClick(0.88);
+      if (state.processingTimerId) {
+        clearInterval(state.processingTimerId);
+        state.processingTimerId = null;
+      }
+      setTapeTransportActive(false);
+      navigateTo('review-take', true);
+    }
+
+    /**
+     * View 6: Your Melody & Real-Time Web Audio Synthesizer Playback
+     */
+    function renderYourMelodyScreen() {
+      const inst = getActiveInstrument();
+      document.getElementById('melody-card-instrument').textContent = inst.name;
+
+      const container = document.getElementById('melody-waveform-bars');
+      container.innerHTML = '';
+
+      const barsData = state.melodyWaveform.length
+        ? state.melodyWaveform
+        : Array.from({ length: 42 }, (_, i) => 0.22 + Math.abs(Math.sin(i * 0.32)) * 0.72);
+
+      barsData.forEach((amp) => {
+        const bar = document.createElement('div');
+        bar.className = 'wave-bar w-1 sm:w-1.5 rounded-full bg-[#C9332B]';
+        bar.style.height = `${Math.round(amp * 100)}%`;
+        container.appendChild(bar);
+      });
+
+      updateMelodyVisualProgress(state.playbackOffsetSec / (state.takeDurationSec || 12));
+    }
+
+    function midiToFreq(midi) {
+      return 440 * Math.pow(2, (midi - 69) / 12);
+    }
+
+    /**
+     * Schedules a single expressive note on an AudioContext / OfflineAudioContext
+     * tailored to the selected instrument's acoustic profile.
+     */
+    function scheduleInstrumentNote(ctx, inst, midi, startTime, duration, velocity = 0.75) {
+      const freq = midiToFreq(midi);
+
+      const osc1 = ctx.createOscillator();
+      const osc2 = ctx.createOscillator();
+      const filter = ctx.createBiquadFilter();
+      const envGain = ctx.createGain();
+
+      osc1.type = inst.waveType;
+      osc2.type = inst.subWave;
+
+      osc1.frequency.setValueAtTime(freq, startTime);
+      osc2.frequency.setValueAtTime(freq * 1.003, startTime); // Warm analog tape chorus detune
+
+      // Expressive vibrato LFO
+      const lfo = ctx.createOscillator();
+      const lfoGain = ctx.createGain();
+      lfo.frequency.setValueAtTime(inst.vibratoRate, startTime);
+      lfoGain.gain.setValueAtTime(inst.vibratoDepth, startTime);
+      lfo.connect(lfoGain);
+      lfoGain.connect(osc1.frequency);
+
+      // Warm resonant filter envelope
+      filter.type = 'lowpass';
+      filter.Q.setValueAtTime(inst.filterQ, startTime);
+      filter.frequency.setValueAtTime(inst.filterFreq * 0.45, startTime);
+      filter.frequency.exponentialRampToValueAtTime(inst.filterFreq, startTime + inst.attack + 0.04);
+      filter.frequency.exponentialRampToValueAtTime(
+        Math.max(260, inst.filterFreq * 0.55),
+        startTime + duration + inst.release
+      );
+
+      const peakGain = 0.22 * velocity;
+      envGain.gain.setValueAtTime(0.0001, startTime);
+      envGain.gain.linearRampToValueAtTime(peakGain, startTime + inst.attack);
+      envGain.gain.setValueAtTime(peakGain * 0.85, Math.max(startTime + inst.attack, startTime + duration - 0.04));
+      envGain.gain.exponentialRampToValueAtTime(0.0001, startTime + duration + inst.release);
+
+      osc1.connect(filter);
+      osc2.connect(filter);
+      filter.connect(envGain);
+      envGain.connect(ctx.destination);
+
+      osc1.start(startTime);
+      osc2.start(startTime);
+      lfo.start(startTime);
+
+      const stopTime = startTime + duration + inst.release + 0.03;
+      osc1.stop(stopTime);
+      osc2.stop(stopTime);
+      lfo.stop(stopTime);
+
+      return [osc1, osc2, lfo];
+    }
+
+    function toggleMelodyPlayback() {
+      playMechClick(1.1);
+      if (state.isPlayingMelody) {
+        pauseMelodyPlayback();
+      } else {
+        startMelodyPlayback();
+      }
+    }
+
+    function startMelodyPlayback() {
+      const ctx = getAudioContext();
+      const inst = getActiveInstrument();
+      const totalDur = state.takeDurationSec || 12;
+
+      if (state.playbackOffsetSec >= totalDur - 0.15) {
+        state.playbackOffsetSec = 0;
+      }
+
+      state.isPlayingMelody = true;
+      state.playbackStartTimeCtx = ctx.currentTime - state.playbackOffsetSec;
+      state.activeOscillators = [];
+
+      document.getElementById('play-preview-btn').textContent = 'Pause preview';
+      document.getElementById('playback-status-caption').textContent =
+        `Playing ${inst.name} arrangement · Click waveform to scrub.`;
+      setTapeTransportActive(true);
+
+      // Schedule all notes from current offset forward
+      state.melodyNotes.forEach((note) => {
+        const noteEnd = note.start + note.duration;
+        if (noteEnd > state.playbackOffsetSec) {
+          const relStart = Math.max(0, note.start - state.playbackOffsetSec);
+          const adjDur = Math.max(0.12, noteEnd - Math.max(note.start, state.playbackOffsetSec));
+          const nodes = scheduleInstrumentNote(
+            ctx,
+            inst,
+            note.midi,
+            ctx.currentTime + relStart,
+            adjDur,
+            note.velocity
+          );
+          state.activeOscillators.push(...nodes);
+        }
+      });
+
+      const tick = () => {
+        if (!state.isPlayingMelody) return;
+        const elapsed = ctx.currentTime - state.playbackStartTimeCtx;
+        state.playbackOffsetSec = Math.min(totalDur, elapsed);
+
+        updateTapeCounter(state.playbackOffsetSec);
+        updateMelodyVisualProgress(state.playbackOffsetSec / totalDur);
+
+        if (elapsed >= totalDur) {
+          pauseMelodyPlayback(true);
+          return;
+        }
+        state.playbackRafId = requestAnimationFrame(tick);
+      };
+
+      state.playbackRafId = requestAnimationFrame(tick);
+    }
+
+    function pauseMelodyPlayback(finished = false) {
+      state.isPlayingMelody = false;
+      if (state.playbackRafId) {
+        cancelAnimationFrame(state.playbackRafId);
+        state.playbackRafId = null;
+      }
+
+      state.activeOscillators.forEach((node) => {
+        try {
+          node.stop();
+        } catch (e) {}
+      });
+      state.activeOscillators = [];
+
+      setTapeTransportActive(false);
+      const btn = document.getElementById('play-preview-btn');
+      if (btn) btn.textContent = 'Play preview';
+
+      if (finished) {
+        state.playbackOffsetSec = 0;
+        updateMelodyVisualProgress(0);
+        updateTapeCounter(state.takeDurationSec);
+        const cap = document.getElementById('playback-status-caption');
+        if (cap) cap.textContent = 'Playback finished · Ready to replay or export.';
+      }
+    }
+
+    /**
+     * Updates the 42 waveform bars from Vermilion (#C9332B) to Cream LED (#F2EFE9)
+     * in sync with the horizontal red progress bar (matching Screenshot 3 right panel).
+     */
+    function updateMelodyVisualProgress(ratio) {
+      const clamped = Math.max(0, Math.min(1, ratio));
+      const progressLine = document.getElementById('melody-progress-line');
+      if (progressLine) {
+        progressLine.style.width = `${(clamped * 100).toFixed(2)}%`;
+      }
+
+      const bars = document.getElementById('melody-waveform-bars')?.children;
+      if (!bars || bars.length === 0) return;
+
+      const playedCount = Math.floor(clamped * bars.length);
+      for (let i = 0; i < bars.length; i++) {
+        bars[i].style.backgroundColor = i < playedCount ? '#F2EFE9' : '#C9332B';
+      }
+    }
+
+    function seekMelodyWaveform(event) {
+      playMechClick(1.0);
+      const rect = event.currentTarget.getBoundingClientRect();
+      const clickRatio = Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width));
+      const wasPlaying = state.isPlayingMelody;
+
+      if (wasPlaying) pauseMelodyPlayback();
+      state.playbackOffsetSec = clickRatio * (state.takeDurationSec || 12);
+      updateMelodyVisualProgress(clickRatio);
+      updateTapeCounter(state.playbackOffsetSec);
+
+      if (wasPlaying) startMelodyPlayback();
+    }
+
+    function goToExportPreview() {
+      pauseMelodyPlayback();
+      navigateTo('export-preview');
+    }
+
+    /**
+     * View 7 & 8: Export Preview & Real Binary MIDI / WAV File Generators
+     */
+    function renderExportPreviewScreen() {
+      selectExportFormat(state.exportFormat, true);
+    }
+
+    function selectExportFormat(fmt, silent = false) {
+      if (!silent) playMechClick(1.08);
+      state.exportFormat = fmt;
+
+      const midiCard = document.getElementById('format-card-midi');
+      const wavCard = document.getElementById('format-card-wav');
+      const readout = document.getElementById('selected-format-readout');
+
+      if (fmt === 'MIDI') {
+        midiCard.className = 'tactile-module tactile-module-interactive bg-vermilion-static rounded-[24px] p-6 sm:p-7 text-left transition-colors';
+        wavCard.className = 'tactile-module tactile-module-interactive bg-stone rounded-[24px] p-6 sm:p-7 text-left transition-colors';
+      } else {
+        midiCard.className = 'tactile-module tactile-module-interactive bg-stone rounded-[24px] p-6 sm:p-7 text-left transition-colors';
+        wavCard.className = 'tactile-module tactile-module-interactive bg-vermilion-static rounded-[24px] p-6 sm:p-7 text-left transition-colors';
+      }
+
+      readout.textContent = fmt;
+    }
+
+    function renderExportReadyScreen() {
+      const inst = getActiveInstrument();
+      document.getElementById('export-summary-instrument').textContent = inst.name;
+      document.getElementById('export-summary-format').textContent = state.exportFormat;
+      document.getElementById('download-btn-label').textContent =
+        state.exportFormat === 'MIDI' ? 'Download .MID' : 'Download .WAV';
+      document.getElementById('export-download-feedback').textContent =
+        `Ready to export ${inst.name} session master as ${state.exportFormat}.`;
+    }
+
+    async function downloadExportedFile() {
+      playMechClick(1.2);
+      const inst = getActiveInstrument();
+      const safeName = inst.name.replace(/\s+/g, '_');
+
+      if (state.exportFormat === 'MIDI') {
+        const midiBytes = buildStandardMidiFile(state.melodyNotes, inst.gmProgram);
+        const blob = new Blob([midiBytes], { type: 'audio/midi' });
+        triggerBlobDownload(blob, `TuneWeaver_${safeName}_Melody.mid`);
+        document.getElementById('export-download-feedback').textContent =
+          `Saved TuneWeaver_${safeName}_Melody.mid (${midiBytes.length} bytes · SMF Format 0).`;
+      } else {
+        document.getElementById('download-btn-label').textContent = 'Rendering WAV...';
+        const wavBlob = await renderMelodyToWavBlob(state.melodyNotes, inst, state.takeDurationSec || 12);
+        triggerBlobDownload(wavBlob, `TuneWeaver_${safeName}_Melody.wav`);
+        document.getElementById('download-btn-label').textContent = 'Download .WAV';
+        document.getElementById('export-download-feedback').textContent =
+          `Saved TuneWeaver_${safeName}_Melody.wav (${Math.round(wavBlob.size / 1024)} KB · 44.1kHz 16-bit PCM).`;
+      }
+    }
+
+    function triggerBlobDownload(blob, filename) {
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      setTimeout(() => URL.revokeObjectURL(url), 1500);
+    }
+
+    /**
+     * Generates a 100% standards-compliant binary Standard MIDI File (.mid Format 0)
+     */
+    function buildStandardMidiFile(notes, gmProgram = 65) {
+      const tpq = 480; // Ticks per quarter note at 120 BPM (1 sec = 960 ticks)
+      const ticksPerSec = 960;
+
+      function encodeVarLen(value) {
+        let buffer = [value & 0x7f];
+        while ((value >>= 7) > 0) {
+          buffer.unshift((value & 0x7f) | 0x80);
+        }
+        return buffer;
+      }
+
+      const events = [];
+      // Program Change on Channel 0
+      events.push({ tick: 0, bytes: [0xc0, gmProgram & 0x7f] });
+
+      notes.forEach((n) => {
+        const onTick = Math.round(n.start * ticksPerSec);
+        const offTick = Math.round((n.start + n.duration) * ticksPerSec);
+        const vel = Math.round((n.velocity || 0.75) * 127);
+        events.push({ tick: onTick, bytes: [0x90, n.midi & 0x7f, vel & 0x7f] });
+        events.push({ tick: offTick, bytes: [0x80, n.midi & 0x7f, 0x00] });
+      });
+
+      events.sort((a, b) => a.tick - b.tick);
+
+      const trackBytes = [
+        // Set Tempo meta event: 500,000 microseconds/quarter = 120 BPM
+        0x00, 0xff, 0x51, 0x03, 0x07, 0xa1, 0x20
+      ];
+
+      let lastTick = 0;
+      events.forEach((ev) => {
+        const delta = Math.max(0, ev.tick - lastTick);
+        lastTick = ev.tick;
+        trackBytes.push(...encodeVarLen(delta), ...ev.bytes);
+      });
+
+      // End of Track meta event
+      trackBytes.push(0x00, 0xff, 0x2f, 0x00);
+
+      const trackLen = trackBytes.length;
+      const header = [
+        0x4d, 0x54, 0x68, 0x64, // "MThd"
+        0x00, 0x00, 0x00, 0x06, // Header length = 6
+        0x00, 0x00,             // Format 0
+        0x00, 0x01,             // 1 track
+        (tpq >> 8) & 0xff, tpq & 0xff
+      ];
+
+      const trackHeader = [
+        0x4d, 0x54, 0x72, 0x6b, // "MTrk"
+        (trackLen >> 24) & 0xff,
+        (trackLen >> 16) & 0xff,
+        (trackLen >> 8) & 0xff,
+        trackLen & 0xff
+      ];
+
+      return new Uint8Array([...header, ...trackHeader, ...trackBytes]);
+    }
+
+    /**
+     * Renders the synthesized instrument melody offline to a 44.1kHz 16-bit PCM WAV Blob
+     */
+    async function renderMelodyToWavBlob(notes, inst, durationSec) {
+      const sampleRate = 44100;
+      const totalSamples = Math.ceil(sampleRate * (durationSec + 0.5));
+      const offline = new OfflineAudioContext(2, totalSamples, sampleRate);
+
+      notes.forEach((note) => {
+        scheduleInstrumentNote(offline, inst, note.midi, note.start, note.duration, note.velocity);
+      });
+
+      const renderedBuffer = await offline.startRendering();
+      const numChannels = renderedBuffer.numberOfChannels;
+      const length = renderedBuffer.length * numChannels * 2;
+      const buffer = new ArrayBuffer(44 + length);
+      const view = new DataView(buffer);
+
+      function writeString(offset, str) {
+        for (let i = 0; i < str.length; i++) {
+          view.setUint8(offset + i, str.charCodeAt(i));
+        }
+      }
+
+      writeString(0, 'RIFF');
+      view.setUint32(4, 36 + length, true);
+      writeString(8, 'WAVE');
+      writeString(12, 'fmt ');
+      view.setUint32(16, 16, true); // PCM chunk size
+      view.setUint16(20, 1, true);  // PCM format
+      view.setUint16(22, numChannels, true);
+      view.setUint32(24, sampleRate, true);
+      view.setUint32(28, sampleRate * numChannels * 2, true);
+      view.setUint16(32, numChannels * 2, true);
+      view.setUint16(34, 16, true); // 16-bit
+      writeString(36, 'data');
+      view.setUint32(40, length, true);
+
+      const left = renderedBuffer.getChannelData(0);
+      const right = numChannels > 1 ? renderedBuffer.getChannelData(1) : left;
+      let offset = 44;
+
+      for (let i = 0; i < renderedBuffer.length; i++) {
+        const lSample = Math.max(-1, Math.min(1, left[i]));
+        const rSample = Math.max(-1, Math.min(1, right[i]));
+        view.setInt16(offset, lSample < 0 ? lSample * 0x8000 : lSample * 0x7fff, true);
+        view.setInt16(offset + 2, rSample < 0 ? rSample * 0x8000 : rSample * 0x7fff, true);
+        offset += 4;
+      }
+
+      return new Blob([buffer], { type: 'audio/wav' });
+    }
+
+    /**
+     * Initialize Application on Load
+     */
+    window.addEventListener('DOMContentLoaded', () => {
+      updateStudioInstrumentUI();
+      updateTapeCounter(0);
+    });
+  </script>
+</body>
+</html>
